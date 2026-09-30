@@ -56,7 +56,7 @@
         (apply new-neural-slice slice (cons input-object output-objects))
         (do ((iteration 1 (+ iteration 1)))
           ((> iteration times))
-          (record-benchmark output "inter-object-assign" 1 count iteration
+          (record-benchmark output "inter-object-assign" 1 count iter
                             (lambda ()
                               (do ((i 1 (+ i 1)))
                                 ((> i iter))

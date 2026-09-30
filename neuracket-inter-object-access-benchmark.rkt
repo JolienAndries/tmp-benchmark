@@ -41,8 +41,9 @@
         (define inputs (build-list count (lambda (_) (new inter-object-class%))))
         (define output-object (new inter-object-class%))
         (apply new-neural-slice slice (append inputs (list output-object)))
-        (for ([iteration (in-range 1 (add1 times))])
-          (record-benchmark output "inter-object-access" count 1 iteration
+        (do ((iteration 1 (+ iteration 1)))
+          ((> iteration times))
+          (record-benchmark output "inter-object-access" count 1 iter
                             (lambda () (do-access (list output-object)
                                                   (list (lambda (object)
                                                           (get-field external-neural object)))
