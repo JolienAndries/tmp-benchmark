@@ -5,19 +5,19 @@
 
 ;; ( (lambda (object inputs) (send/apply object infer-neural-x-in-1-out inputs)) ..)
 (define-syntax (input-method-list stx)
-  (with-syntax ([(method ...)
+  (with-syntax ([(proc ...)
                  (for/list ([count (in-range 1 100 2)])
                    (define method (format-id stx "infer-neural-~a-in-1-out" count))
                    #`(lambda (object inputs) (send/apply object #,method inputs)))])
-    #'(list method ...)))
+    #'(list proc ...)))
 
 ;; same as above but ranging over outputs 
 (define-syntax (output-method-list stx)
-  (with-syntax ([(method ...)
+  (with-syntax ([(proc ...)
                  (for/list ([count (in-range 3 50 2)])
                    (define method (format-id stx "infer-neural-1-in-~a-out!" count))
                    #`(lambda (object input outputs) (send/apply object #,method input outputs)))])
-    #'(list method ...)))
+    #'(list proc ...)))
 
 ;; (list (list (lambda (object) (get-field  external-neuralx  object)) ...) ...)) list of longer getting lists of lambdas accessing external neural fields 
 
@@ -46,10 +46,10 @@
             [method (input-method-list)])
         (define object (new inter-object-class%))
         (define inputs (build-list count (lambda (_) (new inter-object-class%))))
-        (method object inputs)
         (for ([iteration (in-range 1 (add1 times))])
           (record-benchmark output "inter-object-access" count 1 iter
                             (lambda ()
+                              (method object inputs)
                               (do-access (list object)
                                          (list (lambda (value)
                                                  (get-field external-neural value)))
@@ -59,12 +59,13 @@
         (define object (new inter-object-class%))
         (define input (new inter-object-class%))
         (define outputs (build-list (sub1 count) (lambda (_) (new inter-object-class%))))
-        (method object input outputs)
         (define objects (cons object outputs))
         (for ([iteration (in-range 1 (add1 times))])
+          (let ((function (list-ref (field-function-lists) (/ (- count 3) 2))))
           (record-benchmark output "inter-object-access" 1 count iter
                             (lambda ()
+                              (method object input outputs)
                               (do-access objects
-                                         (list-ref (field-function-lists) (/ (- count 3) 2))
-                                         iter))))))))
+                                         function
+                                         iter)))))))))
 
