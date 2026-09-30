@@ -1,8 +1,10 @@
 #lang racket
 (provide do-assign-benchmark)
 (require "benchmark-results.rkt"
+         mlobject
          (for-syntax racket/base racket/syntax))
 ;; (define benchmark-name obj iter) (do ((i 1 (+ i 1))) ((> i iter)) (set-field! lbl obj value) ...)) output number of times set-field!
+;; if output > 1 :(set-fields! ...)
 (define-syntax (define-assign-benchmark stx)
   (syntax-case stx ()
     [(_ name input-count output-count)
@@ -11,12 +13,20 @@
             [fields (if (= outputs 1)
                         (list (format-id stx "lbl~a" inputs))
                         (for/list ([index (in-range 1 (add1 outputs))])
-                          (format-id stx "lbl~a.~a" outputs index)))])
+                          (format-id stx "lbl~a.~a" outputs index)))]
+            [values (for/list ([value (in-range 1 (add1 outputs))])
+                      (datum->syntax stx value))]
+            [assignments (if (= outputs 1)
+                             (for/list ([field fields] [value values])
+                               #`(set-field! #,field obj #,value))
+                             (list #`(set-fields! (#,@fields)
+                                                   (#,@(for/list ([index (in-range outputs)])
+                                                         #'obj))
+                                                   (#,@values))))])
        #`(define (name obj iter)
            (do ((i 1 (+ i 1)))
              ((> i iter))
-             #,@(for/list ([field fields] [value (in-naturals 1)])
-                  #`(set-field! #,field obj #,value)))))]))
+             #,@assignments)))]))
 
 ;; all benchmarks above 
 (define-syntax (define-all-assign-benchmarks stx)

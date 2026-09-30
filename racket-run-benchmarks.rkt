@@ -9,19 +9,18 @@
   (run-access-benchmark iter times intra-object-1-out intra-object-1-in
                         (string-append results-folder "racket-intra-object-access.csv"))
   (displayln "...done")
-#|  (displayln "Start racket-intra-object-assign...")
+  (displayln "Start racket-intra-object-assign...")
   (do-assign-benchmark iter times intra-object-1-out intra-object-1-in
                        (string-append results-folder "racket-intra-object-assign.csv"))
-  (displayln "...done") |#
+  (displayln "...done") 
   (displayln "Start racket-inter-object-access...")
   (run-racket-inter-object-access-benchmarks iter times
                                              (string-append results-folder "racket-inter-object-access.csv"))
   (displayln "...done")
-#|  (displayln "Start racket-inter-object-assign ...")
+  (displayln "Start racket-inter-object-assign ...")
   (run-racket-inter-object-assign-benchmarks iter times
                                              (string-append results-folder "racket-inter-object-assign.csv"))
-  (displayln "...done") |#
-  )
+  (displayln "...done"))
 
 (define (test-benchmarks) (run-benchmarks 10 1))
 (define (real-benchmarks) (run-benchmarks 100000 15))
