@@ -1,5 +1,5 @@
 #lang racket
-(provide run-racket-inter-object-access-benchmarks)
+(provide run-racket-inter-object-access-benchmarks-cached)
 (require racket/class "racket-classes.rkt" "benchmark-results.rkt"
          (for-syntax racket/base racket/syntax))
 
@@ -38,7 +38,7 @@
     ((> i iter))
     (for-each (lambda (function object) (function object)) functions objects)))
 
-(define (run-racket-inter-object-access-benchmarks iter times
+(define (run-racket-inter-object-access-benchmarks-cached iter times
                                                    [output-path "racket-inter-object-access.csv"])
   (with-benchmark-results output-path
     (lambda (output)
@@ -46,26 +46,28 @@
             [method (input-method-list)])
         (define object (new inter-object-class%))
         (define inputs (build-list count (lambda (_) (new inter-object-class%))))
-        (for ([iteration (in-range 1 (add1 times))])
+        (method object inputs)
+        (do ((iteration 1 (+ iteration 1)))
+          ((> iteration times))
           (record-benchmark output "inter-object-access" count 1 iter
                             (lambda ()
-                              (method object inputs)
                               (do-access (list object)
                                          (list (lambda (value)
                                                  (get-field external-neural value)))
-                                         iter)))))
-      (for ([count (in-range 3 50 2)]
-            [method (output-method-list)])
-        (define object (new inter-object-class%))
-        (define input (new inter-object-class%))
-        (define outputs (build-list (sub1 count) (lambda (_) (new inter-object-class%))))
-        (define objects (cons object outputs))
-        (for ([iteration (in-range 1 (add1 times))])
-          (let ((function (list-ref (field-function-lists) (/ (- count 3) 2))))
-          (record-benchmark output "inter-object-access" 1 count iter
-                            (lambda ()
-                              (method object input outputs)
-                              (do-access objects
-                                         function
-                                         iter)))))))))
+                                         iter))))
+        (for ([count (in-range 3 50 2)]
+              [method (output-method-list)])
+          (define object (new inter-object-class%))
+          (define input (new inter-object-class%))
+          (define outputs (build-list (sub1 count) (lambda (_) (new inter-object-class%))))
+          (define objects (cons object outputs))
+          (method object input outputs)
+          (let ((access-functions (list-ref (field-function-lists) (/ (- count 3) 2))))
+            (do ((iteration 1 (+ iteration 1)))
+              ((> iteration times))
+              (record-benchmark output "inter-object-access" 1 count iter
+                                (lambda ()
+                                  (do-access objects
+                                             access-functions
+                                             iter))))))))))
 

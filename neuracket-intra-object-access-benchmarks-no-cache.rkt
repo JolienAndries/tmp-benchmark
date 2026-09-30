@@ -1,5 +1,5 @@
 #lang racket
-(provide run-access-benchmark)
+(provide run-access-benchmark-no-cache)
 (require "benchmark-results.rkt"
          (for-syntax racket/base racket/syntax))
 
@@ -20,7 +20,10 @@
        #`(define (name obj iter)
            (do ((i 1 (+ i 1)))
              ((> i iter))
-             #,@(for/list ([field fields]) #`(get-field #,field obj)))))]))
+             ;; invalidate 1x then get-field all neural fields 
+             (set-field! #,(if (= outputs 1) (format-id stx "a") (format-id stx "in")) obj i)
+             #,@(for/list ([field fields])
+                  #`(get-field #,field obj)))))]))
 
 (define-syntax (define-all-access-benchmarks stx)
   (with-syntax ([(input-benchmark ...)
@@ -63,7 +66,7 @@
     (record-benchmark output benchmark-name input-count output-count iter
                       (lambda () (benchmark object iter)))))
 
-(define (run-access-benchmark iter times object-1-out object-1-in
+(define (run-access-benchmark-no-cache iter times object-1-out object-1-in
                               [output-path "neuracket-intra-object-access.csv"])
   (with-benchmark-results output-path
     (lambda (output)

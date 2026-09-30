@@ -1,0 +1,73 @@
+#lang racket
+(provide run-racket-inter-object-access-benchmarks-no-cache)
+(require racket/class "racket-classes.rkt" "benchmark-results.rkt"
+         (for-syntax racket/base racket/syntax))
+
+;; ( (lambda (object inputs) (send/apply object infer-neural-x-in-1-out inputs)) ..)
+(define-syntax (input-method-list stx)
+  (with-syntax ([(proc ...)
+                 (for/list ([count (in-range 1 100 2)])
+                   (define method (format-id stx "infer-neural-~a-in-1-out" count))
+                   #`(lambda (object inputs) (send/apply object #,method inputs)))])
+    #'(list proc ...)))
+
+;; same as above but ranging over outputs 
+(define-syntax (output-method-list stx)
+  (with-syntax ([(proc ...)
+                 (for/list ([count (in-range 3 50 2)])
+                   (define method (format-id stx "infer-neural-1-in-~a-out!" count))
+                   #`(lambda (object input outputs) (send/apply object #,method input outputs)))])
+    #'(list proc ...)))
+
+;; (list (list (lambda (object) (get-field  external-neuralx  object)) ...) ...)) list of longer getting lists of lambdas accessing external neural fields 
+
+(define-syntax (field-function-lists stx)
+  (with-syntax ([(function-list ...)
+                 (for/list ([count (in-range 3 50 2)])
+                   (with-syntax ([(function ...)
+                                  (for/list ([index (in-range 1 (add1 count))])
+                                    (define field (if (= index 1)
+                                                      (format-id stx "external-neural")
+                                                      (format-id stx "external-neural~a" index)))
+                                    #`(lambda (object)
+                                        (get-field #,field object)))])
+                     #'(list function ...)))])
+    #'(list function-list ...)))
+
+(define (run-racket-inter-object-access-benchmarks-no-cache iter times
+                                                            [output-path "racket-inter-object-access.csv"])
+  (with-benchmark-results output-path
+    (lambda (output)
+      (for ([count (in-range 1 100 2)]
+            [method (input-method-list)])
+        (define object (new inter-object-class%))
+        (define inputs (build-list count (lambda (_) (new inter-object-class%))))
+        (define first-input (car inputs))
+        (do ((iteration 1 (+ iteration 1)))
+          ((> iteration times))
+          (record-benchmark output "inter-object-access" count 1 iter
+                            (lambda ()
+                              (do ((i 1 (+ i 1)))
+                                ((> i iter))
+                                ;; invalidate + [infer + assign to external] + get [] = happens in the racket class already
+                                (set-field! a first-input i)
+                                (get-field external-neural object))))))
+      (for ([count (in-range 3 50 2)]
+            [method (output-method-list)])
+        (define object (new inter-object-class%))
+        (define input (new inter-object-class%))
+        (define outputs (build-list (sub1 count) (lambda (_) (new inter-object-class%))))
+        (define objects (cons object outputs))
+        (do ((iteration 1 (+ iteration 1)))
+          ((> iteration times))
+          (let ((functions (list-ref (field-function-lists) (/ (- count 3) 2))))
+            (record-benchmark output "inter-object-access" 1 count iter
+                              (lambda ()
+                                (do ((i 1 (+ i 1)))
+                                  ((> i iter))
+                                  ;; invalidate + [reinfer + assign to externals] + get [] = happens in the racket class already
+                                  (set-field! a input i)
+                                  (method object input outputs)
+                                  (for-each (lambda (func obj) (func obj))
+                                            functions objects))))))))))
+

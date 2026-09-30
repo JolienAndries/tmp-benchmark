@@ -34,10 +34,17 @@
                                          (class-id stx "c"))
                                    (modulo index 3)))
                        #`(get-field #,input-field this)))
+                   (define infer-name (format-id stx "infer-neural-~a-in-1-out" count))
+                   (define infer-function (format-id stx "infer-~a-in-1-out" count))
                    (define method-name (format-id stx "train-neural~a" count))
                    (define train-function (format-id stx "train-~a-in-1-out" count))
-                   #`(define/public (#,method-name)
-                         (send/apply racket-ml-models #,train-function (list #,@inputs (get-field #,field this)))))])
+                   #`(begin
+                       (define/public (#,infer-name)
+                         (set-field! #,field this
+                                     (send/apply racket-ml-models #,infer-function
+                                                 (list #,@inputs))))
+                       (define/public (#,method-name)
+                         (send/apply racket-ml-models #,train-function (list #,@inputs (get-field #,field this))))))])
     #'(begin
         field-form
         method ...)))
@@ -58,10 +65,19 @@
                    (define field-values
                      (for/list ([field fields])
                        #`(get-field #,field this)))
+                   (define infer-name (format-id stx "infer-neural-1-in-~a-out!" count))
+                   (define infer-function (format-id stx "infer-1-in-~a-out" count))
                    (define method-name (format-id stx "train-neurals~a" count))
                    (define train-function (format-id stx "train-1-in-~a-out" count))
-                   #`(define/public (#,method-name)
-                         (send/apply racket-ml-models #,train-function (list (get-field in this)  #,@field-values))))])
+                   #`(begin
+                       (define/public (#,infer-name)
+                         (define result (send racket-ml-models #,infer-function
+                                              (get-field in this)))
+                         #,@(for/list ([field fields] [index (in-naturals)])
+                              #`(set-field! #,field this (list-ref result #,index)))
+                         result)
+                       (define/public (#,method-name)
+                         (send/apply racket-ml-models #,train-function (list (get-field in this)  #,@field-values)))))] )
     #'(begin
         field-form
         method ...)))
@@ -116,7 +132,8 @@
                                               (get-field a input-object)))
                          (set-field! #,first-result-field this (list-ref result 0))
                          #,@(for/list ([field rest-result-fields] [index (in-naturals 1)])
-                              #`(set-field! #,field #,(list-ref objects (- index 1)) (list-ref result #,index))))
+                              #`(set-field! #,field #,(list-ref objects (- index 1)) (list-ref result #,index)))
+                         result)
                        (define/public (#,train-name input-object #,@objects)
                          (send/apply racket-ml-models #,train-function (list (get-field a input-object) #,@values)))))])
     #'(begin method ...)))

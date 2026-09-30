@@ -1,5 +1,5 @@
 #lang racket
-(provide run-neuracket-inter-object-access-benchmarks)
+(provide run-neuracket-inter-object-access-benchmarks-cached)
 (require "neuracket-classes.rkt" "neuracket-neural-slices.rkt" "benchmark-results.rkt"
          (for-syntax racket/base racket/syntax))
 
@@ -33,7 +33,7 @@
     ((> i iter))
     (for-each (lambda (function object) (function object)) functions objects)))
 
-(define (run-neuracket-inter-object-access-benchmarks iter times
+(define (run-neuracket-inter-object-access-benchmarks-cached iter times
                                                       [output-path "neuracket-inter-object-access.csv"])
   (with-benchmark-results output-path
     (lambda (output)
@@ -41,21 +41,27 @@
         (define inputs (build-list count (lambda (_) (new inter-object-class%))))
         (define output-object (new inter-object-class%))
         (apply new-neural-slice slice (append inputs (list output-object)))
+        (get-field external-neural output-object)
         (do ((iteration 1 (+ iteration 1)))
           ((> iteration times))
           (record-benchmark output "inter-object-access" count 1 iter
-                            (lambda () (do-access (list output-object)
-                                                  (list (lambda (object)
-                                                          (get-field external-neural object)))
-                                                  iter)))))
+                            (lambda ()
+                              (do ((access 1 (+ access 1)))
+                                ((> access iter))
+                                (set-field! a (car inputs) access)
+                                (get-field external-neural output-object))))))
       (for ([count (in-range 3 50 2)] [slice (output-slice-list)])
         (define input-object (new inter-object-class%))
         (define output-objects (build-list count (lambda (_) (new inter-object-class%))))
         (apply new-neural-slice slice (cons input-object output-objects))
+        (for ([output-object output-objects]
+              [function (list-ref (field-function-lists) (/ (- count 3) 2))])
+          (function output-object))
         (do ((iteration 1 (+ iteration 1)))
           ((> iteration times))
           (record-benchmark output "inter-object-access" 1 count iter
-                            (lambda () (do-access output-objects
-                                                  (list-ref (field-function-lists)
-                                                            (/ (- count 3) 2)) ;; count starts at 3, and steps +2 -> convert to listref aka 0 1 2 ...
-                                                  iter))))))))
+                            (lambda ()
+                              (do-access output-objects
+                                         (list-ref (field-function-lists)
+                                                   (/ (- count 3) 2))
+                                         iter))))))))
