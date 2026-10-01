@@ -42,7 +42,7 @@
                                                     (string-append results-folder "racket-inter-object-access-cached.csv"))
   (displayln "...done"))
 
-(define (run-no-cache-benchmarks iter times)
+(define (run-no-cache-access-benchmarks iter times)
   (displayln "Start racket-intra-object-access-no-cache...")
   (run-access-benchmark-no-cache iter times intra-object-1-out intra-object-1-in
                                  (string-append results-folder "racket-intra-object-access-no-cache.csv"))
@@ -53,7 +53,9 @@
                                                       (string-append results-folder "racket-inter-object-access-no-cache.csv"))
   (displayln "...done"))
 
-(define (test-benchmarks) (run-benchmarks 5 2))
+(define (test-benchmarks)
+  (run-cached-access-benchmarks 5 15)
+  (run-no-cache-access-benchmarks 5 15))
 (define (real-benchmarks)
   (run-cached-access-benchmarks 100000 15)
   (run-no-cache-access-benchmarks 10000 15))

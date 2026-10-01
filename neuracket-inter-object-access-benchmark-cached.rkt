@@ -46,9 +46,9 @@
           ((> iteration times))
           (record-benchmark output "inter-object-access" count 1 iter
                             (lambda ()
-                              (do ((access 1 (+ access 1)))
-                                ((> access iter))
-                                (set-field! a (car inputs) access)
+                              (do ((i 1 (+ i 1)))
+                                ((> i iter))
+                                (set-field! a (car inputs) i)
                                 (get-field external-neural output-object))))))
       (for ([count (in-range 3 50 2)] [slice (output-slice-list)])
         (define input-object (new inter-object-class%))
