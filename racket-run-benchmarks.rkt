@@ -58,6 +58,10 @@
   (run-no-cache-access-benchmarks 5 15))
 (define (real-benchmarks)
   (run-cached-access-benchmarks 10000 15)
+  (displayln "Start racket-inter-object-assign ...")
+  (run-racket-inter-object-assign-benchmarks 10000 15
+                                             (string-append results-folder "racket-inter-object-assign.csv"))
+  (displayln "...done")
   ;;(run-no-cache-access-benchmarks 10000 15)
   )
 

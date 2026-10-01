@@ -34,7 +34,8 @@
           ((> iteration times))
           (record-benchmark output "inter-object-assign" count 1 iter
                             (lambda ()
-                              (for ([repeat (in-range iter)])
+                              (do ((i 1 (+ i 1)))
+                                ((> i iter))
                                 (set-field! external-neural object 42)
                                 (method object inputs))))))
       (for ([count (in-range 3 50 2)]
