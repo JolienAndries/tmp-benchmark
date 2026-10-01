@@ -7,11 +7,11 @@
 (define (run-benchmarks iter times)
   (displayln "Start racket-intra-object-access-cached...")
   (run-access-benchmark-cached iter times intra-object-1-out intra-object-1-in
-                        (string-append results-folder "racket-intra-object-access-cached.csv"))
+                               (string-append results-folder "racket-intra-object-access-cached.csv"))
   (displayln "...done")
   (displayln "Start racket-intra-object-access-no-cache...")
   (run-access-benchmark-no-cache iter times intra-object-1-out intra-object-1-in
-                        (string-append results-folder "racket-intra-object-access-no-cache.csv"))
+                                 (string-append results-folder "racket-intra-object-access-no-cache.csv"))
   (displayln "...done")
   (displayln "Start racket-intra-object-assign...")
   (do-assign-benchmark iter times intra-object-1-out intra-object-1-in
@@ -19,19 +19,44 @@
   (displayln "...done") 
   (displayln "Start racket-inter-object-access-cached...")
   (run-racket-inter-object-access-benchmarks-cached iter times
-                                             (string-append results-folder "racket-inter-object-access-cached.csv"))
+                                                    (string-append results-folder "racket-inter-object-access-cached.csv"))
   (displayln "...done")
-    (displayln "Start racket-inter-object-access-no-cache...")
+  (displayln "Start racket-inter-object-access-no-cache...")
   (run-racket-inter-object-access-benchmarks-no-cache iter times
-                                             (string-append results-folder "racket-inter-object-access-no-cache.csv"))
+                                                      (string-append results-folder "racket-inter-object-access-no-cache.csv"))
   (displayln "...done")
   (displayln "Start racket-inter-object-assign ...")
- (run-racket-inter-object-assign-benchmarks iter times
+  (run-racket-inter-object-assign-benchmarks iter times
                                              (string-append results-folder "racket-inter-object-assign.csv"))
   (displayln "...done"))
 
+(define (run-cached-access-benchmarks iter times)
+  (displayln "Start racket-intra-object-access-cached...")
+  (run-access-benchmark-cached iter times intra-object-1-out intra-object-1-in
+                               (string-append results-folder "racket-intra-object-access-cached.csv"))
+  (displayln "...done")
+
+ 
+  (displayln "Start racket-inter-object-access-cached...")
+  (run-racket-inter-object-access-benchmarks-cached iter times
+                                                    (string-append results-folder "racket-inter-object-access-cached.csv"))
+  (displayln "...done"))
+
+(define (run-no-cache-benchmarks iter times)
+  (displayln "Start racket-intra-object-access-no-cache...")
+  (run-access-benchmark-no-cache iter times intra-object-1-out intra-object-1-in
+                                 (string-append results-folder "racket-intra-object-access-no-cache.csv"))
+  (displayln "...done")
+
+  (displayln "Start racket-inter-object-access-no-cache...")
+  (run-racket-inter-object-access-benchmarks-no-cache iter times
+                                                      (string-append results-folder "racket-inter-object-access-no-cache.csv"))
+  (displayln "...done"))
+
 (define (test-benchmarks) (run-benchmarks 5 2))
-(define (real-benchmarks) (run-benchmarks 100000 15))
+(define (real-benchmarks)
+  (run-cached-access-benchmarks 100000 15)
+  (run-no-cache-access-benchmarks 10000 15))
 
 ;(test-benchmarks)
 (real-benchmarks)
