@@ -63,8 +63,9 @@
 
 (define (test-benchmarks) (run-benchmarks 5 2))
 (define (real-benchmarks)
-  (run-cached-access-benchmarks 100000 15)
-  (run-no-cache-access-benchmarks 10000 15))
+  (run-cached-access-benchmarks 10000 15)
+  ;;(run-no-cache-access-benchmarks 10000 15)
+  )
 
 ;(test-benchmarks)
 (real-benchmarks)
